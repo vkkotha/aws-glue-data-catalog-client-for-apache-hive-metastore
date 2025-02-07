@@ -1464,13 +1464,16 @@ public class AWSCatalogMetastoreClient implements IMetaStoreClient {
 
   @Override
   public boolean isCompatibleWith(Configuration conf) {
-    if (currentMetaVars == null) {
+    // Make a copy of currentMetaVars, there is a race condition that
+    // currentMetaVars might be changed during the execution of the method
+    Map<String, String> currentMetaVarsCopy = currentMetaVars;
+    if (currentMetaVarsCopy == null) {
       return false; // recreate
     }
     boolean compatible = true;
     for (MetastoreConf.ConfVars oneVar : MetastoreConf.metaVars) {
       // Since metaVars are all of different types, use string for comparison
-      String oldVar = currentMetaVars.get(oneVar.getVarname());
+      String oldVar = currentMetaVarsCopy.get(oneVar.getVarname());
       String newVar = conf.get(oneVar.getVarname(), "");
       if (oldVar == null ||
             (oneVar.isCaseSensitive() ? !oldVar.equals(newVar) : !oldVar.equalsIgnoreCase(newVar))) {
